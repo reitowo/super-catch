@@ -9,12 +9,17 @@
 #define SUPER_CATCH_IS_WIN
 #endif
 
-#if defined(SUPER_CATCH_IS_WIN) && defined(_MSC_VER) && !defined(__clang__)
-#define SUPER_CATCH_IS_WIN_MSVC
+#if defined(__APPLE__) || defined(__linux__) || defined(_POSIX_VERSION)
+#define SUPER_CATCH_IS_POSIX
 #endif
 
-#if defined(__APPLE__) || defined(__linux__) || defined(_POSIX_VERSION)
-#define SUPER_CATCH_IS_POSIX_COMPATIBLE
+// Platforms
+#if defined(SUPER_CATCH_IS_WIN) && defined(_MSC_VER) && !defined(__clang__)
+#define SUPER_CATCH_PLAT_WIN_MSVC
+#endif
+
+#if defined(SUPER_CATCH_IS_POSIX)
+#define SUPER_CATCH_PLAT_POSIX_COMPATIBLE
 #endif
 
 // Debug
@@ -29,7 +34,7 @@
 #define SUPER_CATCH_CONCATENATE(x, y) SUPER_CATCH_CONCATENATE_DETAIL(x, y)
 
 // Platform specific code
-#if defined(SUPER_CATCH_IS_WIN_MSVC)
+#if defined(SUPER_CATCH_PLAT_WIN_MSVC)
 
 #include <csignal>
 #include <csetjmp>
@@ -115,7 +120,7 @@ namespace super_catch {
         do
 #define SUPER_CATCH while(0); } catch
 
-#elif defined(SUPER_CATCH_IS_POSIX_COMPATIBLE)
+#elif defined(SUPER_CATCH_PLAT_POSIX_COMPATIBLE)
 
 // Posix version using signal handler
 #include <csetjmp>
@@ -215,6 +220,6 @@ namespace super_catch {
 
 #else
 
-#error "super-catch not supported on this platform. currently supports Windows(MSVC) and POSIX compliant systems.
+#error "super-catch not supported on this platform. currently supports Windows (MSVC) and POSIX compatible systems.
 
 #endif

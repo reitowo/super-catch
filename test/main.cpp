@@ -4,11 +4,11 @@
 #include <functional>
 #include <memory>
 
-#if defined(SUPER_CATCH_IS_WIN_MSVC)
+#if defined(SUPER_CATCH_PLAT_WIN_MSVC)
 #include <windows.h>
 #endif
 
-#if defined(SUPER_CATCH_IS_POSIX_COMPATIBLE)
+#if defined(SUPER_CATCH_PLAT_POSIX_COMPATIBLE)
 #include <sys/mman.h>
 #include <unistd.h>
 #endif
@@ -28,7 +28,7 @@ public:
 void TestIllegalInstruction() {
     SUPER_CATCH_TEST_START();
 
-#if defined(SUPER_CATCH_IS_POSIX_COMPATIBLE)
+#if defined(SUPER_CATCH_PLAT_POSIX_COMPATIBLE)
     size_t page_size = sysconf(_SC_PAGESIZE);
     void *mem = mmap(nullptr, page_size, PROT_READ | PROT_EXEC, MAP_PRIVATE | MAP_ANON, -1, 0);
     if (mem == MAP_FAILED) {
@@ -48,7 +48,7 @@ void TestIllegalInstruction() {
     }
 #endif
 
-#if defined(SUPER_CATCH_IS_WIN_MSVC)
+#if defined(SUPER_CATCH_PLAT_WIN_MSVC)
     SYSTEM_INFO system_info;
     GetSystemInfo(&system_info);
     size_t page_size = system_info.dwPageSize;
@@ -123,7 +123,7 @@ int main() {
     TestSegFault();
     TestAbort();
 
-#if defined(SUPER_CATCH_IS_WIN_MSVC)
+#if defined(SUPER_CATCH_PLAT_WIN_MSVC)
     TestExecuteStack();
 #endif
 

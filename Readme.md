@@ -18,6 +18,8 @@ int main() {
 }
 ```
 
+See `test/main.cpp` for detail.
+
 ## Feature
 
 - Supports Windows with MSVC compiler (needs `/EHa` compiler flag)

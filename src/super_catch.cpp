@@ -2,7 +2,7 @@
 
 #include "include/super_catch.h"
 
-#if defined(SUPER_CATCH_IS_POSIX_COMPATIBLE)
+#if defined(SUPER_CATCH_PLAT_POSIX_COMPATIBLE)
 
 #include <cassert>
 #include <system_error>
@@ -136,7 +136,7 @@ namespace super_catch {
 
 #endif
 
-#if defined(SUPER_CATCH_IS_WIN_MSVC)
+#if defined(SUPER_CATCH_PLAT_WIN_MSVC)
 
 #include <windows.h>
 #include <eh.h>
