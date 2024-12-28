@@ -1,6 +1,6 @@
 # Super Catch
 
-> Cross-platform catch (almost) any error (signal, structured exception, system error), converting it to `std::exception`. Using original C++ try-catch syntax.
+Cross-platform catch (almost) any error (signal, structured exception, system error), converting it to `std::exception`. Using original C++ try-catch syntax.
 
 ## Usage
 
