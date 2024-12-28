@@ -22,11 +22,13 @@ See `test/main.cpp` for detail.
 
 ## Feature
 
+- Original C++ try-catch syntax. (`SUPER_TRY`, `SUPER_CATCH`)
+- Convert all types of system errors (`SEH`, `signal`) to `std::exception`
 - Supports Windows with MSVC compiler (needs `/EHa` compiler flag)
   - Structured Exceptions
-  - Signals (SIGABRT, SIGSEGV, SIGFPE)
+  - Signals (`SIGABRT`, `SIGSEGV`, `SIGFPE`)
 - Supports POSIX compatible systems
-  - Signals (SIGILL, SIGABRT, SIGFPE, SIGTRAP, SIGSEGV, SIGBUS, SIGPIPE, SIGTERM)
+  - Signals (`SIGILL`, `SIGABRT`, `SIGFPE`, `SIGTRAP`, `SIGSEGV`, `SIGBUS`, `SIGPIPE`, `SIGTERM`)
 
 ## Limitation
 
