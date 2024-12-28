@@ -4,7 +4,7 @@ project(super_catch LANGUAGES C CXX ASM_MASM)
 set(CMAKE_CXX_STANDARD 11)
 
 # Library
-add_library(super_catch STATIC
+add_library(super_catch
         include/super_catch.h
         src/super_catch.cpp
 )
