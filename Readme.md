@@ -1,6 +1,6 @@
 # Super Catch
 
-> Catch (almost) any error (std::exception, signal, structured exception, system error), converting it to `std::exception`. Using original C++ try-catch syntax.
+> Cross-platform catch (almost) any error (std::exception, signal, structured exception, system error), converting it to `std::exception`. Using original C++ try-catch syntax.
 
 ## Usage
 
@@ -17,3 +17,13 @@ int main() {
     }
 }
 ```
+
+## Feature
+
+- Supports Windows with MSVC compiler, needs use `/EHa` compiler flag.
+- Supports POSIX compatible systems.
+
+## Limitation
+
+- macOS: Unable to catch the exception, when invoking code which address is on non-executable segments.
+- Windows: Unsure about the behaviour if the compiler is clang-cl (likely won't work) or compiling in mingw environments with POSIX api.
