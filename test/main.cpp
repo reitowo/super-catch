@@ -22,8 +22,10 @@ public:
     }
 };
 
-#define SUPER_CATCH_TEST_START(); SUPER_CATCH_DEBUG_PRINTF("test %s start\n", __FUNCTION__);
-#define SUPER_CATCH_TEST_END(); SUPER_CATCH_DEBUG_PRINTF("test %s end\n\n", __FUNCTION__);
+#define SUPER_CATCH_TEST_PRINTF(...) fprintf(stderr, __VA_ARGS__);
+
+#define SUPER_CATCH_TEST_START(); SUPER_CATCH_TEST_PRINTF("++ test %s start\n", __FUNCTION__);
+#define SUPER_CATCH_TEST_END(); SUPER_CATCH_TEST_PRINTF("-- test %s end\n\n", __FUNCTION__);
 
 void TestIllegalInstruction() {
     SUPER_CATCH_TEST_START();
@@ -32,7 +34,7 @@ void TestIllegalInstruction() {
     size_t page_size = sysconf(_SC_PAGESIZE);
     void *mem = mmap(nullptr, page_size, PROT_READ | PROT_EXEC, MAP_PRIVATE | MAP_ANON, -1, 0);
     if (mem == MAP_FAILED) {
-        SUPER_CATCH_DEBUG_PRINTF("mmap failed");
+        SUPER_CATCH_TEST_PRINTF("mmap failed");
         return;
     }
 
@@ -40,11 +42,11 @@ void TestIllegalInstruction() {
         const auto bad = reinterpret_cast<void (*)()>(mem);
         bad();
     } SUPER_CATCH (const std::exception &e) {
-        SUPER_CATCH_DEBUG_PRINTF("super catched exception: %s\n", e.what());
+        SUPER_CATCH_TEST_PRINTF(">> super catched exception: %s\n", e.what());
     }
 
     if (munmap(mem, page_size) != 0) {
-        SUPER_CATCH_DEBUG_PRINTF("munmap failed");
+        SUPER_CATCH_TEST_PRINTF("munmap failed");
     }
 #endif
 
@@ -56,7 +58,7 @@ void TestIllegalInstruction() {
     // Allocate executable memory
     void *mem = VirtualAlloc(nullptr, page_size, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READ);
     if (!mem) {
-        SUPER_CATCH_DEBUG_PRINTF("VirtualAlloc failed\n");
+        SUPER_CATCH_TEST_PRINTF("VirtualAlloc failed\n");
         return;
     }
 
@@ -65,12 +67,12 @@ void TestIllegalInstruction() {
         const auto bad = reinterpret_cast<void (*)()>(mem);
         bad(); // This should trigger an access violation
     } SUPER_CATCH (const std::exception &e) {
-        SUPER_CATCH_DEBUG_PRINTF("super catched exception: %s\n", e.what());
+        SUPER_CATCH_TEST_PRINTF(">> super catched exception: %s\n", e.what());
     }
 
     // Free the allocated memory
     if (!VirtualFree(mem, 0, MEM_RELEASE)) {
-        SUPER_CATCH_DEBUG_PRINTF("VirtualFree failed\n");
+        SUPER_CATCH_TEST_PRINTF("VirtualFree failed\n");
     }
 #endif
 
@@ -85,7 +87,7 @@ void TestExecuteStack() {
         const auto bad = reinterpret_cast<void (*)()>(reinterpret_cast<void *>(inst));
         bad();
     } SUPER_CATCH (const std::exception &e) {
-        SUPER_CATCH_DEBUG_PRINTF(">> super catched exception: %s\n", e.what());
+        SUPER_CATCH_TEST_PRINTF(">> super catched exception: %s\n", e.what());
     }
 
     SUPER_CATCH_TEST_END();
@@ -98,7 +100,7 @@ void TestAbort() {
         // Trigger abort
         abort();
     } SUPER_CATCH (const std::exception &e) {
-        SUPER_CATCH_DEBUG_PRINTF(">> super catched exception: %s\n", e.what());
+        SUPER_CATCH_TEST_PRINTF(">> super catched exception: %s\n", e.what());
     }
 
     SUPER_CATCH_TEST_END();
@@ -112,13 +114,16 @@ void TestSegFault() {
         std::unique_ptr<TestClass> test;
         test->TestMethod();
     } SUPER_CATCH (const std::exception &e) {
-        SUPER_CATCH_DEBUG_PRINTF(">> super catched exception: %s\n", e.what());
+        SUPER_CATCH_TEST_PRINTF(">> super catched exception: %s\n", e.what());
     }
 
     SUPER_CATCH_TEST_END();
 }
 
 int main() {
+    setvbuf(stdout, nullptr, _IONBF, 0);
+    setvbuf(stderr, nullptr, _IONBF, 0);
+
     TestIllegalInstruction();
     TestSegFault();
     TestAbort();

@@ -251,11 +251,11 @@ super_catch::detail::scoped_seh::scoped_seh() noexcept: old{
             throw seh_exception{n, p};
         })
 } {
-    SUPER_CATCH_DEBUG_PRINTF("set new se translator and signal\n");
+    SUPER_CATCH_DEBUG_PRINTF("set new se translator\n");
 }
 
 super_catch::detail::scoped_seh::~scoped_seh() noexcept {
-    SUPER_CATCH_DEBUG_PRINTF("restore old se translator and signal\n");
+    SUPER_CATCH_DEBUG_PRINTF("restore old se translator\n");
     _set_se_translator(old);
 }
 
