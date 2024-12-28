@@ -5,7 +5,6 @@
 ## Usage
 
 ```c++
-#include <stdio.h>
 #include <super_catch.h>
 
 int main() {
