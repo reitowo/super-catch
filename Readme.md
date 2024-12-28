@@ -1,6 +1,6 @@
-# Super Try Catch
+# Super Catch
 
-> Catch (almost) any std exception, signals, system errors. Using original try catch scheme.
+> Catch (almost) any error (std::exception, signal, structured exception, system error), converting it to `std::exception`. Using original C++ try catch scheme.
 
 ## Usage
 
