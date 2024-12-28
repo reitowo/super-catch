@@ -2,7 +2,7 @@
 
 #include "include/super_catch.h"
 
-#if !defined(IS_WIN)
+#if defined(SUPER_CATCH_IS_POSIX_COMPATIBLE)
 
 #include <cassert>
 #include <system_error>
@@ -132,6 +132,174 @@ namespace super_catch {
             SUPER_CATCH_DEBUG_PRINTF("pop signal handler %p to %p\n", this_buf, cur_buf);
         }
     }
+}
+
+#endif
+
+#if defined(SUPER_CATCH_IS_WIN_MSVC)
+
+#include <windows.h>
+#include <eh.h>
+#include <Psapi.h>
+#include <sstream>
+#include <csignal>
+#include <csetjmp>
+
+namespace {
+    const char *signal_description(const int &signal) {
+        switch (signal) {
+            case SIGABRT: return "SIGABRT";
+            case SIGFPE: return "SIGFPE";
+            case SIGSEGV: return "SIGSEGV";
+            default: return "SIGUNKNOWN";
+        }
+    }
+}
+
+namespace super_catch {
+    namespace detail {
+        thread_local jmp_buf_chain *cur_buf = nullptr;
+
+        void signal_handler(const int sig) {
+            SUPER_CATCH_DEBUG_PRINTF("signal handler %d\n", sig);
+
+            if (cur_buf) {
+                SUPER_CATCH_DEBUG_PRINTF("convert signal to std exception %p\n", cur_buf);
+                std::atomic_signal_fence(std::memory_order_acquire);
+                longjmp(cur_buf->buf, sig);
+            }
+
+            // this signal was not caused within the scope of signal handler object,
+            // invoke the default handler
+            SUPER_CATCH_DEBUG_PRINTF("invoke default signal handler\n");
+            signal(sig, SIG_DFL);
+            raise(sig);
+        }
+
+        jmp_buf_chain *jmp_chain_push() {
+            const auto this_buf = cur_buf;
+            cur_buf = new jmp_buf_chain();
+            cur_buf->prev = this_buf;
+            cur_buf->sigabrt = signal(SIGABRT, signal_handler);
+            cur_buf->sigfpe = signal(SIGFPE, signal_handler);
+            cur_buf->sigsegv = signal(SIGSEGV, signal_handler);
+
+            SUPER_CATCH_DEBUG_PRINTF("push signal handler %p to %p\n", this_buf, cur_buf);
+            return cur_buf;
+        }
+
+        void jmp_chain_pop() {
+            const auto this_buf = cur_buf;
+            if (cur_buf != nullptr) {
+                signal(SIGABRT, cur_buf->sigabrt);
+                signal(SIGFPE, cur_buf->sigfpe);
+                signal(SIGSEGV, cur_buf->sigsegv);
+
+                cur_buf = cur_buf->prev;
+                delete this_buf;
+            }
+
+            SUPER_CATCH_DEBUG_PRINTF("pop signal handler %p to %p\n", this_buf, cur_buf);
+        }
+    }
+}
+
+namespace {
+    const char *seh_description(const unsigned int &code) {
+        switch (code) {
+            case EXCEPTION_ACCESS_VIOLATION: return "EXCEPTION_ACCESS_VIOLATION";
+            case EXCEPTION_ARRAY_BOUNDS_EXCEEDED: return "EXCEPTION_ARRAY_BOUNDS_EXCEEDED";
+            case EXCEPTION_BREAKPOINT: return "EXCEPTION_BREAKPOINT";
+            case EXCEPTION_DATATYPE_MISALIGNMENT: return "EXCEPTION_DATATYPE_MISALIGNMENT";
+            case EXCEPTION_FLT_DENORMAL_OPERAND: return "EXCEPTION_FLT_DENORMAL_OPERAND";
+            case EXCEPTION_FLT_DIVIDE_BY_ZERO: return "EXCEPTION_FLT_DIVIDE_BY_ZERO";
+            case EXCEPTION_FLT_INEXACT_RESULT: return "EXCEPTION_FLT_INEXACT_RESULT";
+            case EXCEPTION_FLT_INVALID_OPERATION: return "EXCEPTION_FLT_INVALID_OPERATION";
+            case EXCEPTION_FLT_OVERFLOW: return "EXCEPTION_FLT_OVERFLOW";
+            case EXCEPTION_FLT_STACK_CHECK: return "EXCEPTION_FLT_STACK_CHECK";
+            case EXCEPTION_FLT_UNDERFLOW: return "EXCEPTION_FLT_UNDERFLOW";
+            case EXCEPTION_ILLEGAL_INSTRUCTION: return "EXCEPTION_ILLEGAL_INSTRUCTION";
+            case EXCEPTION_IN_PAGE_ERROR: return "EXCEPTION_IN_PAGE_ERROR";
+            case EXCEPTION_INT_DIVIDE_BY_ZERO: return "EXCEPTION_INT_DIVIDE_BY_ZERO";
+            case EXCEPTION_INT_OVERFLOW: return "EXCEPTION_INT_OVERFLOW";
+            case EXCEPTION_INVALID_DISPOSITION: return "EXCEPTION_INVALID_DISPOSITION";
+            case EXCEPTION_NONCONTINUABLE_EXCEPTION: return "EXCEPTION_NONCONTINUABLE_EXCEPTION";
+            case EXCEPTION_PRIV_INSTRUCTION: return "EXCEPTION_PRIV_INSTRUCTION";
+            case EXCEPTION_SINGLE_STEP: return "EXCEPTION_SINGLE_STEP";
+            case EXCEPTION_STACK_OVERFLOW: return "EXCEPTION_STACK_OVERFLOW";
+            default: return "EXCEPTION_UNKNOWN";
+        }
+    }
+
+    const char *seh_op_description(const ULONG opcode) {
+        switch (opcode) {
+            case 0: return "read";
+            case 1: return "write";
+            case 8: return "user-mode data execution prevention (DEP) violation";
+            default: return "unknown";
+        }
+    }
+}
+
+super_catch::seh_exception::seh_exception() noexcept: seh_exception{0, nullptr} {
+}
+
+super_catch::detail::scoped_seh::scoped_seh() noexcept: old{
+    _set_se_translator(
+        [](const unsigned int n, EXCEPTION_POINTERS *p) {
+            SUPER_CATCH_DEBUG_PRINTF("enter se translator\n");
+            throw seh_exception{n, p};
+        })
+} {
+    SUPER_CATCH_DEBUG_PRINTF("set new se translator and signal\n");
+}
+
+super_catch::detail::scoped_seh::~scoped_seh() noexcept {
+    SUPER_CATCH_DEBUG_PRINTF("restore old se translator and signal\n");
+    _set_se_translator(old);
+}
+
+super_catch::seh_exception::seh_exception(const unsigned int n, void *rep) noexcept: se_error_{n} {
+    const auto ep = static_cast<EXCEPTION_POINTERS *>(rep);
+
+    if (ep != nullptr) {
+        HMODULE hm;
+        ::GetModuleHandleEx(
+            GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS, static_cast<LPCTSTR>(ep->ExceptionRecord->ExceptionAddress), &hm);
+        MODULEINFO mi;
+        ::GetModuleInformation(::GetCurrentProcess(), hm, &mi, sizeof(mi));
+        char fn[MAX_PATH];
+        ::GetModuleFileNameExA(::GetCurrentProcess(), hm, fn, MAX_PATH);
+
+        std::ostringstream oss;
+        oss << "seh exception " << seh_description(n) << " at address 0x" << std::hex << ep->ExceptionRecord->
+                ExceptionAddress << std::dec << "\n"
+                << "module " << fn << " loaded at base address 0x" << std::hex << mi.lpBaseOfDll;
+
+        if (n == EXCEPTION_ACCESS_VIOLATION || n == EXCEPTION_IN_PAGE_ERROR) {
+            oss << "\n" << "invalid operation: " << seh_op_description(ep->ExceptionRecord->ExceptionInformation[0]) <<
+                    " at address 0x" << std::hex << ep->ExceptionRecord->ExceptionInformation[1] << std::dec;
+        }
+
+        if (n == EXCEPTION_IN_PAGE_ERROR) {
+            oss << "\n" << "underlying NTSTATUS code that resulted in the exception " << ep->ExceptionRecord->
+                    ExceptionInformation[2];
+        }
+
+        msg_ = oss.str();
+    } else {
+        constexpr int buf_len = 64;
+        char buf[buf_len];
+        const int len = snprintf(buf, buf_len, "seh exception: %08x", se_error_);
+        msg_ = std::string(buf, len);
+    }
+}
+
+super_catch::win_signal_exception::win_signal_exception(const int sig) noexcept: sig_(sig) {
+    constexpr int buf_len = 64;
+    char buf[buf_len];
+    const int len = snprintf(buf, buf_len, "win signal exception: %d %s", sig, signal_description(sig));
+    msg_ = std::string(buf, len);
 }
 
 #endif
