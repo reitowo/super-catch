@@ -1,15 +1,13 @@
 // Written by Reito in 2024
 
 /*
-
-Usage:
-
-SUPER_TRY {
-    // Your business code here
-} SUPER_CATCH (const std::exception& e) {
-    // Your error handling code here
-}
-
+ *   Repo: https://github.com/reitowo/super-catch
+ *   Usage:
+ *      SUPER_TRY {
+ *          // Your business code here
+ *      } SUPER_CATCH (const std::exception& e) {
+ *          // Your error handling code here
+ *      }
 */
 
 #pragma once
@@ -77,6 +75,7 @@ namespace super_catch {
         };
 
         jmp_buf_chain *jmp_chain_push();
+
         void jmp_chain_pop();
     }
 
