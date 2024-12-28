@@ -5,13 +5,12 @@ set(CMAKE_CXX_STANDARD 11)
 
 # Library
 add_library(super_catch
-        include/super_catch.h
+        include/super_catch/super_catch.h
         src/super_catch.cpp
 )
 
 option(SUPER_CATCH_ENABLE_DEBUG_OUTPUT "Enable debug output to stderr" OFF)
 
-target_include_directories(super_catch PRIVATE .)
 target_include_directories(super_catch PUBLIC include)
 
 if (SUPER_CATCH_ENABLE_DEBUG_OUTPUT)

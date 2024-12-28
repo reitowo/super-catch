@@ -1,6 +1,6 @@
 // Written by Reito in 2024
 
-#include <super_catch.h>
+#include "super_catch/super_catch.h"
 #include <functional>
 #include <memory>
 

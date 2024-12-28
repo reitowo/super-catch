@@ -1,6 +1,6 @@
 // Written by Reito in 2024
 
-#include "include/super_catch.h"
+#include "super_catch/super_catch.h"
 
 #if defined(SUPER_CATCH_PLAT_POSIX_COMPATIBLE)
 
