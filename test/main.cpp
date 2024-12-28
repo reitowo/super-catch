@@ -4,6 +4,10 @@
 #include <functional>
 #include <memory>
 
+#if defined(SUPER_CATCH_IS_WIN_MSVC)
+#include <windows.h>
+#endif
+
 #if defined(SUPER_CATCH_IS_POSIX_COMPATIBLE)
 #include <sys/mman.h>
 #include <unistd.h>
@@ -44,6 +48,32 @@ void TestIllegalInstruction() {
     }
 #endif
 
+#if defined(SUPER_CATCH_IS_WIN_MSVC)
+    SYSTEM_INFO system_info;
+    GetSystemInfo(&system_info);
+    size_t page_size = system_info.dwPageSize;
+
+    // Allocate executable memory
+    void *mem = VirtualAlloc(nullptr, page_size, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READ);
+    if (!mem) {
+        SUPER_CATCH_DEBUG_PRINTF("VirtualAlloc failed\n");
+        return;
+    }
+
+    SUPER_TRY {
+        // Cast memory to a function pointer and execute
+        const auto bad = reinterpret_cast<void (*)()>(mem);
+        bad(); // This should trigger an access violation
+    } SUPER_CATCH (const std::exception &e) {
+        SUPER_CATCH_DEBUG_PRINTF("super catched exception: %s\n", e.what());
+    }
+
+    // Free the allocated memory
+    if (!VirtualFree(mem, 0, MEM_RELEASE)) {
+        SUPER_CATCH_DEBUG_PRINTF("VirtualFree failed\n");
+    }
+#endif
+
     SUPER_CATCH_TEST_END();
 }
 
@@ -55,7 +85,7 @@ void TestExecuteStack() {
         const auto bad = reinterpret_cast<void (*)()>(reinterpret_cast<void *>(inst));
         bad();
     } SUPER_CATCH (const std::exception &e) {
-        SUPER_CATCH_DEBUG_PRINTF("> super catched exception: %s\n", e.what());
+        SUPER_CATCH_DEBUG_PRINTF(">> super catched exception: %s\n", e.what());
     }
 
     SUPER_CATCH_TEST_END();
@@ -68,7 +98,7 @@ void TestAbort() {
         // Trigger abort
         abort();
     } SUPER_CATCH (const std::exception &e) {
-        SUPER_CATCH_DEBUG_PRINTF("> super catched exception: %s\n", e.what());
+        SUPER_CATCH_DEBUG_PRINTF(">> super catched exception: %s\n", e.what());
     }
 
     SUPER_CATCH_TEST_END();
@@ -82,7 +112,7 @@ void TestSegFault() {
         std::unique_ptr<TestClass> test;
         test->TestMethod();
     } SUPER_CATCH (const std::exception &e) {
-        SUPER_CATCH_DEBUG_PRINTF("> super catched exception: %s\n", e.what());
+        SUPER_CATCH_DEBUG_PRINTF(">> super catched exception: %s\n", e.what());
     }
 
     SUPER_CATCH_TEST_END();
