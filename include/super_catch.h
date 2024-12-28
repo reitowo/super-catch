@@ -1,5 +1,17 @@
 // Written by Reito in 2024
 
+/*
+
+Usage:
+
+SUPER_TRY {
+    // Your business code here
+} SUPER_CATCH (const std::exception& e) {
+    // Your error handling code here
+}
+
+*/
+
 #pragma once
 
 #include <system_error>
