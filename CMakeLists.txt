@@ -11,7 +11,7 @@ add_library(super_catch
 
 option(SUPER_CATCH_ENABLE_DEBUG_OUTPUT "Enable debug output to stderr" OFF)
 
-target_include_directories(super_catch PUBLIC include)
+target_include_directories(super_catch PUBLIC "${CMAKE_CURRENT_LIST_DIR}/include")
 
 if (SUPER_CATCH_ENABLE_DEBUG_OUTPUT)
     target_compile_definitions(super_catch PUBLIC -DSUPER_CATCH_PARAM_DEBUG_OUTPUT)
