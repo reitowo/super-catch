@@ -4,6 +4,10 @@
 
 #include <system_error>
 
+#ifdef __unix__
+#include <unistd.h>
+#endif
+
 // Define platform macros
 #if defined(_WIN32) || defined(_WIN64)
 #define SUPER_CATCH_IS_WIN
