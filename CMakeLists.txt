@@ -18,7 +18,9 @@ if (SUPER_CATCH_ENABLE_DEBUG_OUTPUT)
     target_compile_definitions(super_catch PUBLIC -DSUPER_CATCH_PARAM_DEBUG_OUTPUT)
 endif ()
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /EHa")
+if (MSVC)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /EHa")
+endif ()
 
 # Test
 add_executable(super_catch_test
