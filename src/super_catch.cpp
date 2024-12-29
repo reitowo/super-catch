@@ -164,6 +164,13 @@ namespace super_catch {
             SUPER_CATCH_DEBUG_PRINTF("signal handler %d\n", sig);
 
             if (cur_buf) {
+                // Although longjmp in signals except SIGFPE is not recommended by Microsoft
+                // https://learn.microsoft.com/en-us/cpp/c-runtime-library/reference/longjmp?view=msvc-170
+
+                if (sig == SIGFPE) {
+                    _fpreset();
+                }
+
                 SUPER_CATCH_DEBUG_PRINTF("convert signal to std exception %p\n", cur_buf);
                 std::atomic_signal_fence(std::memory_order_acquire);
                 longjmp(cur_buf->buf, sig);

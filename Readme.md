@@ -34,3 +34,5 @@ See `test/main.cpp` for detail.
 
 - macOS: When invoking code which address is at non-executable segments, the `SIGSEGV` won't be captured by signal handler.
 - Windows: Unsure about the behaviour if the compiler is clang-cl (likely won't work) or compiling in mingw environments with POSIX api.
+- The recover code won't release locks, use with cautious when the code contains lock. 
+- The recover code won't destruct C++ objects like std::unique_ptr, use with cautions if the code allocates memory.
