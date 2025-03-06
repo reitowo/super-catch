@@ -72,6 +72,10 @@ namespace super_catch {
             _crt_signal_t sigabrt;
             _crt_signal_t sigfpe;
             _crt_signal_t sigsegv;
+
+#if defined(SUPER_CATCH_PARAM_DEBUG_OUTPUT)
+            int depth;
+#endif
         };
 
         jmp_buf_chain *jmp_chain_push();

@@ -184,19 +184,29 @@ namespace super_catch {
         }
 
         jmp_buf_chain *jmp_chain_push() {
-            const auto this_buf = cur_buf;
+            const auto prev_buf = cur_buf;
+
             cur_buf = new jmp_buf_chain();
-            cur_buf->prev = this_buf;
+            cur_buf->prev = prev_buf;
             cur_buf->sigabrt = signal(SIGABRT, signal_handler);
             cur_buf->sigfpe = signal(SIGFPE, signal_handler);
             cur_buf->sigsegv = signal(SIGSEGV, signal_handler);
 
-            SUPER_CATCH_DEBUG_PRINTF("push signal handler %p to %p\n", this_buf, cur_buf);
+#if defined(SUPER_CATCH_PARAM_DEBUG_OUTPUT)
+            cur_buf->depth = prev_buf == nullptr ? 0 : prev_buf->depth + 1;
+#endif
+
+            SUPER_CATCH_DEBUG_PRINTF("push signal handler %d %p to %p\n", cur_buf->depth, prev_buf, cur_buf);
             return cur_buf;
         }
 
         void jmp_chain_pop() {
             const auto this_buf = cur_buf;
+
+#if defined(SUPER_CATCH_PARAM_DEBUG_OUTPUT)
+            const auto depth = this_buf->depth;
+#endif
+
             if (cur_buf != nullptr) {
                 signal(SIGABRT, cur_buf->sigabrt);
                 signal(SIGFPE, cur_buf->sigfpe);
@@ -206,7 +216,7 @@ namespace super_catch {
                 delete this_buf;
             }
 
-            SUPER_CATCH_DEBUG_PRINTF("pop signal handler %p to %p\n", this_buf, cur_buf);
+            SUPER_CATCH_DEBUG_PRINTF("pop signal handler %d %p to %p\n", depth, this_buf, cur_buf);
         }
     }
 }
