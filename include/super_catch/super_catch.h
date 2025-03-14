@@ -30,6 +30,13 @@
 // Platforms
 #if defined(SUPER_CATCH_IS_WIN) && defined(_MSC_VER) && !defined(__clang__)
 #define SUPER_CATCH_PLAT_WIN_MSVC
+
+#define WIN32_LEAN_AND_MEAN
+#define NOMINMAX
+#include <windows.h>
+#undef WIN32_LEAN_AND_MEAN
+#undef NOMINMAX
+
 #endif
 
 #if defined(SUPER_CATCH_IS_POSIX)
@@ -38,7 +45,12 @@
 
 // Debug
 #if defined(SUPER_CATCH_PARAM_DEBUG_OUTPUT)
+#if defined(SUPER_CATCH_PLAT_WIN_MSVC)
+#define SUPER_CATCH_DEBUG_PRINTF(...) \
+    { char debugBuffer[512]; sprintf(debugBuffer, __VA_ARGS__); OutputDebugStringA(debugBuffer); }
+#else
 #define SUPER_CATCH_DEBUG_PRINTF(...) fprintf(stderr, __VA_ARGS__)
+#endif
 #else
 #define SUPER_CATCH_DEBUG_PRINTF(...) (void)0
 #endif
