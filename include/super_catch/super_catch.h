@@ -216,6 +216,10 @@ namespace super_catch {
         struct sigjmp_buf_chain {
             sigjmp_buf_chain *prev = nullptr;
             sigjmp_buf buf{};
+
+#if defined(SUPER_CATCH_PARAM_DEBUG_OUTPUT)
+            int depth;
+#endif
         };
 
         sigjmp_buf_chain *sigjmp_chain_push();

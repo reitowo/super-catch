@@ -114,22 +114,31 @@ namespace super_catch {
                 setup_handler();
             });
 
-            const auto this_buf = cur_buf;
+            const auto prev_buf = cur_buf;
             cur_buf = new sigjmp_buf_chain();
-            cur_buf->prev = this_buf;
+            cur_buf->prev = prev_buf;
 
-            SUPER_CATCH_DEBUG_PRINTF("push signal handler %p to %p\n", this_buf, cur_buf);
+#if defined(SUPER_CATCH_PARAM_DEBUG_OUTPUT)
+            cur_buf->depth = prev_buf == nullptr ? 0 : prev_buf->depth + 1;
+#endif
+
+            SUPER_CATCH_DEBUG_PRINTF("push signal handler %d %p to %p\n", cur_buf->depth, prev_buf, cur_buf);
             return cur_buf;
         }
 
         void sigjmp_chain_pop() {
             const auto this_buf = cur_buf;
+
+#if defined(SUPER_CATCH_PARAM_DEBUG_OUTPUT)
+            const auto depth = this_buf->depth;
+#endif
+
             if (cur_buf != nullptr) {
                 cur_buf = cur_buf->prev;
                 delete this_buf;
             }
 
-            SUPER_CATCH_DEBUG_PRINTF("pop signal handler %p to %p\n", this_buf, cur_buf);
+            SUPER_CATCH_DEBUG_PRINTF("pop signal handler %d %p to %p\n", depth, this_buf, cur_buf);
         }
     }
 }
